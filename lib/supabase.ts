@@ -1,4 +1,4 @@
-const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const headers = { apikey: key, "Content-Type": "application/json" };
-export const supabase = { auth: { async signInWithPassword({email,password}:{email:string;password:string}) { const r=await fetch(`${url}/auth/v1/token?grant_type=password`,{method:"POST",headers,body:JSON.stringify({email,password})}); return r.ok?{error:null}:{error:await r.json()}; }, async resetPasswordForEmail(email:string,{redirectTo}:{redirectTo:string}) { return fetch(`${url}/auth/v1/recover`,{method:"POST",headers,body:JSON.stringify({email,redirect_to:redirectTo})}); } }, from(table:string) { return { select: async (columns:string) => { const r=await fetch(`${url}/rest/v1/${table}?select=${encodeURIComponent(columns)}`,{headers}); return {data:r.ok?await r.json():null,error:r.ok?null:await r.json()}; } }; } };
+import { getSupabaseBrowserClient } from "./supabase/client";
+
+// Exportar cliente unificado oficial
+export const supabase = getSupabaseBrowserClient();

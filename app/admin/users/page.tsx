@@ -1,4 +1,87 @@
 "use client";
-import {useEffect,useState} from 'react'; import {supabase} from '@/lib/supabase';
-type User={id:string;full_name:string|null;role:string};
-export default function Users(){const[users,setUsers]=useState<User[]>([]);useEffect(()=>{supabase.from('profiles').select('id,full_name,role').then(({data})=>setUsers((data||[]) as User[]))},[]);return <main className="min-h-screen bg-[#f7f8fb] p-6 lg:p-10"><div className="mx-auto max-w-5xl"><p className="text-sm font-semibold text-[#3157a8]">Administração</p><h1 className="mt-1 text-3xl font-semibold">Usuários e permissões</h1><p className="mt-2 text-slate-500">Defina quem pode acessar e administrar o sistema.</p><section className="mt-8 overflow-hidden rounded-2xl border bg-white"><div className="flex justify-between border-b p-5"><b>Usuários</b><button className="rounded-xl bg-[#3157a8] px-4 py-2 text-sm font-semibold text-white">Convidar usuário</button></div>{users.length?users.map(u=><div className="flex items-center gap-4 border-b p-5" key={u.id}><span className="grid h-9 w-9 place-items-center rounded-full bg-slate-100 font-semibold">{(u.full_name||'?')[0]}</span><span className="flex-1"><b className="block">{u.full_name||'Sem nome'}</b><small className="text-slate-400">{u.id}</small></span><select defaultValue={u.role||'member'} className="rounded-lg border p-2 text-sm"><option value="admin">Administrador</option><option value="member">Usuário</option><option value="viewer">Visualizador</option></select></div>):<p className="p-8 text-center text-slate-500">Nenhum usuário cadastrado.</p>}</section></div></main>}
+
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { getSupabaseBrowserClient } from "@/lib/supabase/client";
+import { UsersManagementView } from "@/components/settings/users-management-view";
+import { ShieldAlert, ArrowLeft } from "lucide-react";
+import Link from "next/link";
+import { Toaster } from "sonner";
+
+export default function AdminUsersPage() {
+  const router = useRouter();
+  const supabase = getSupabaseBrowserClient();
+  const [authorized, setAuthorized] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!session) {
+        router.push("/login?redirect=/admin/users");
+        return;
+      }
+
+      // Validar role em app_metadata
+      const role = session.user.app_metadata?.role;
+      if (role === "admin") {
+        setAuthorized(true);
+      } else {
+        setAuthorized(false);
+      }
+    });
+  }, [router, supabase]);
+
+  if (authorized === null) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-[#f8fafc]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#3157a8] border-t-transparent" />
+          <span className="text-xs font-medium text-slate-500">Verificando autorização administrativa...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (authorized === false) {
+    return (
+      <div className="min-h-screen grid place-items-center bg-[#f8fafc] p-4">
+        <div className="max-w-md w-full rounded-2xl border border-rose-200 bg-white p-6 text-center shadow-lg">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-full bg-rose-50 text-rose-600 mb-3">
+            <ShieldAlert size={24} />
+          </div>
+          <h2 className="text-base font-bold text-slate-800">Acesso Restrito</h2>
+          <p className="mt-1.5 text-xs text-slate-500">
+            Você não possui permissão de Administrador para acessar o gerenciamento de usuários do sistema.
+          </p>
+          <div className="mt-5">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#3157a8] px-4 py-2 text-xs font-semibold text-white hover:bg-[#25468b]"
+            >
+              <ArrowLeft size={14} />
+              Voltar ao Início
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#f8fafc] p-6 lg:p-10">
+      <div className="mx-auto max-w-6xl space-y-6">
+        <div className="flex items-center justify-between">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-800 transition-colors"
+          >
+            <ArrowLeft size={14} />
+            Voltar ao painel principal
+          </Link>
+        </div>
+
+        <UsersManagementView />
+      </div>
+      <Toaster richColors position="top-right" />
+    </div>
+  );
+}

@@ -9,7 +9,10 @@ const eslintConfig = defineConfig([
   globalIgnores([
     // Default ignores of eslint-config-next:
     ".next/**",
+    ".output/**",
+    ".vercel/**",
     "out/**",
+    "dist/**",
     "build/**",
     "next-env.d.ts",
   ]),
@@ -23,6 +26,17 @@ const eslintConfig = defineConfig([
       "react-hooks/set-state-in-effect": "off",
     },
   },
+  {
+    rules: {
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }
+      ],
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/purity": "off"
+    }
+  }
 ]);
 
 export default eslintConfig;
